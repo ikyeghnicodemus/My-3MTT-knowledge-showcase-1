@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KidLearn — Early Learning App</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:system-ui,sans-serif;background:#e8f4ff;display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:20px;}
+  :root{
+    --sky:#4FC3F7;--sun:#FFD600;--grass:#66BB6A;
+    --pink:#FF6B9D;--purple:#9C27B0;--orange:#FF7043;
+    --teal:#26C6DA;--navy:#1A237E;--cream:#FFFDE7;
+    --white:#ffffff;--shadow:rgba(0,0,0,0.12);
+  }
+  .app{max-width:420px;width:100%;margin:0 auto;background:#f0f8ff;border-radius:24px;overflow:hidden;border:3px solid #ddd;min-height:680px;display:flex;flex-direction:column;position:relative;box-shadow:0 8px 40px rgba(0,0,0,0.18);}
+  .status-bar{background:var(--navy);color:white;padding:6px 16px;display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:600;}
+  .top-bar{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;}
+  .top-bar h2{color:white;font-size:17px;font-weight:700;}
+  .top-bar .stars-count{background:rgba(255,255,255,0.25);border-radius:20px;padding:4px 10px;color:white;font-size:12px;font-weight:700;}
+  .screen{flex:1;padding:0;overflow-y:auto;display:none;}
+  .screen.active{display:block;}
+  .bottom-nav{background:white;border-top:2px solid #e0e0e0;display:flex;justify-content:space-around;padding:8px 0 6px;flex-shrink:0;}
+  .nav-btn{display:flex;flex-direction:column;align-items:center;gap:2px;border:none;background:none;cursor:pointer;padding:4px 8px;border-radius:12px;transition:all 0.2s;min-width:52px;}
+  .nav-btn.active{background:#EDE7F6;}
+  .nav-btn .nav-icon{font-size:22px;line-height:1;}
+  .nav-btn .nav-label{font-size:9px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:0.5px;}
+  .nav-btn.active .nav-label{color:#7B1FA2;}
+
+  .home-hero{background:linear-gradient(180deg,#667eea,#764ba2);padding:20px 16px 30px;text-align:center;position:relative;overflow:hidden;}
+  .home-hero::after{content:'';position:absolute;bottom:0;left:0;right:0;height:30px;background:#f0f8ff;border-radius:50% 50% 0 0;}
+  .hero-mascot{font-size:64px;animation:bounce 1.5s infinite;}
+  .hero-title{color:white;font-size:22px;font-weight:800;margin-top:6px;}
+  .hero-sub{color:rgba(255,255,255,0.85);font-size:13px;margin-top:2px;}
+  .home-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:20px 14px 14px;}
+  .home-card{border-radius:20px;padding:16px 12px;text-align:center;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s;box-shadow:0 4px 12px var(--shadow);}
+  .home-card:active{transform:scale(0.96);}
+  .home-card .card-icon{font-size:36px;margin-bottom:6px;}
+  .home-card .card-title{font-size:13px;font-weight:800;color:#333;}
+  .home-card .card-sub{font-size:10px;color:#777;margin-top:2px;}
+  .home-card.c1{background:linear-gradient(135deg,#FFE0B2,#FFCC80);}
+  .home-card.c2{background:linear-gradient(135deg,#E1F5FE,#B3E5FC);}
+  .home-card.c3{background:linear-gradient(135deg,#F3E5F5,#E1BEE7);}
+  .home-card.c4{background:linear-gradient(135deg,#E8F5E9,#C8E6C9);}
+  .home-card.c5{background:linear-gradient(135deg,#FCE4EC,#F8BBD0);}
+  .home-card.c6{background:linear-gradient(135deg,#FFF9C4,#FFF176);}
+  .daily-badge{margin:0 14px 14px;background:linear-gradient(135deg,#FF6B9D,#FF8E53);border-radius:16px;padding:12px 16px;display:flex;align-items:center;gap:10px;box-shadow:0 4px 12px rgba(255,107,157,0.3);}
+  .daily-badge .db-icon{font-size:30px;}
+  .daily-badge h4{color:white;font-size:13px;font-weight:800;}
+  .daily-badge p{color:rgba(255,255,255,0.9);font-size:11px;}
+
+  .learn-tabs{display:flex;background:white;padding:10px 12px 0;gap:6px;border-bottom:2px solid #eee;}
+  .ltab{padding:8px 14px;border-radius:12px 12px 0 0;border:none;cursor:pointer;font-size:12px;font-weight:700;background:none;color:#999;}
+  .ltab.active{background:#EDE7F6;color:#7B1FA2;}
+  .learn-body{padding:14px;}
+  .alpha-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;}
+  .alpha-card{background:white;border-radius:14px;padding:10px 4px;text-align:center;cursor:pointer;box-shadow:0 2px 8px var(--shadow);transition:transform 0.15s,box-shadow 0.15s;border:2px solid transparent;}
+  .alpha-card:active{transform:scale(0.92);}
+  .alpha-card.learned{border-color:#66BB6A;background:#F1F8E9;}
+  .alpha-letter{font-size:22px;font-weight:900;color:#5E35B1;}
+  .alpha-emoji{font-size:18px;}
+  .alpha-word{font-size:8px;color:#888;font-weight:600;margin-top:1px;}
+  .num-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .num-card{background:white;border-radius:16px;padding:14px 8px;text-align:center;cursor:pointer;box-shadow:0 2px 8px var(--shadow);transition:transform 0.15s;}
+  .num-card:active{transform:scale(0.93);}
+  .num-big{font-size:32px;font-weight:900;color:#E91E63;}
+  .num-dots{font-size:14px;color:#FF9800;margin-top:2px;line-height:1.3;}
+  .num-word{font-size:10px;color:#888;font-weight:700;margin-top:4px;}
+  .shapes-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .shape-card{background:white;border-radius:16px;padding:14px;text-align:center;cursor:pointer;box-shadow:0 2px 8px var(--shadow);}
+  .shape-card:active{transform:scale(0.95);}
+  .shape-svg{width:52px;height:52px;margin:0 auto 6px;}
+  .shape-name{font-size:13px;font-weight:800;color:#333;}
+  .colors-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .color-card{border-radius:16px;padding:14px 8px;text-align:center;cursor:pointer;box-shadow:0 3px 10px var(--shadow);transition:transform 0.15s;}
+  .color-card:active{transform:scale(0.93);}
+  .color-name{font-size:12px;font-weight:800;color:white;text-shadow:0 1px 3px rgba(0,0,0,0.3);}
+
+  .games-header{background:linear-gradient(135deg,#FF7043,#FF8E53);padding:16px;text-align:center;}
+  .games-header h3{color:white;font-size:16px;font-weight:800;}
+  .games-header p{color:rgba(255,255,255,0.9);font-size:11px;}
+  .game-list{padding:14px;display:flex;flex-direction:column;gap:10px;}
+  .game-item{background:white;border-radius:16px;padding:14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px var(--shadow);cursor:pointer;transition:transform 0.15s;}
+  .game-item:active{transform:scale(0.98);}
+  .game-item .gi-icon{font-size:36px;width:54px;text-align:center;}
+  .game-item h4{font-size:13px;font-weight:800;color:#333;}
+  .game-item p{font-size:11px;color:#888;margin-top:2px;}
+  .gi-badge{margin-left:auto;background:#E3F2FD;border-radius:8px;padding:4px 8px;font-size:10px;font-weight:700;color:#1565C0;white-space:nowrap;}
+  .quiz-box{margin:14px;background:white;border-radius:20px;padding:18px;box-shadow:0 4px 16px var(--shadow);}
+  .quiz-question{font-size:16px;font-weight:800;color:#333;text-align:center;margin-bottom:16px;}
+  .quiz-emoji{font-size:56px;text-align:center;margin-bottom:12px;}
+  .quiz-options{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .quiz-opt{padding:14px 8px;border-radius:14px;border:2px solid #e0e0e0;font-size:16px;font-weight:800;text-align:center;cursor:pointer;background:#fafafa;transition:all 0.2s;}
+  .quiz-opt:active{transform:scale(0.96);}
+  .quiz-opt.correct{background:#E8F5E9;border-color:#66BB6A;color:#2E7D32;}
+  .quiz-opt.wrong{background:#FFEBEE;border-color:#EF5350;color:#C62828;}
+  .quiz-feedback{text-align:center;margin-top:12px;font-size:14px;font-weight:700;height:20px;}
+
+  .stories-header{background:linear-gradient(135deg,#26A69A,#00BCD4);padding:16px;text-align:center;}
+  .stories-header h3{color:white;font-size:16px;font-weight:800;}
+  .story-list{padding:14px;display:flex;flex-direction:column;gap:10px;}
+  .story-card{background:white;border-radius:18px;overflow:hidden;box-shadow:0 3px 12px var(--shadow);cursor:pointer;transition:transform 0.15s;}
+  .story-card:active{transform:scale(0.98);}
+  .story-thumb{height:90px;display:flex;align-items:center;justify-content:center;font-size:52px;}
+  .story-info{padding:12px;}
+  .story-title{font-size:14px;font-weight:800;color:#333;}
+  .story-sub{font-size:11px;color:#888;margin-top:2px;}
+  .story-meta{display:flex;gap:6px;margin-top:8px;}
+  .story-tag{background:#F3E5F5;border-radius:6px;padding:3px 8px;font-size:9px;font-weight:700;color:#7B1FA2;}
+  .story-viewer{position:absolute;inset:0;background:white;z-index:10;overflow-y:auto;display:none;}
+  .story-viewer.open{display:block;}
+  .sv-header{background:linear-gradient(135deg,#26A69A,#00BCD4);padding:14px 16px;display:flex;align-items:center;gap:10px;}
+  .sv-back{background:rgba(255,255,255,0.3);border:none;border-radius:10px;padding:6px 12px;color:white;font-size:12px;font-weight:700;cursor:pointer;}
+  .sv-title{color:white;font-size:14px;font-weight:800;}
+  .sv-body{padding:16px;}
+  .sv-page{text-align:center;margin-bottom:20px;}
+  .sv-page .pg-emoji{font-size:72px;margin-bottom:12px;}
+  .sv-page .pg-text{font-size:16px;line-height:1.7;color:#333;font-weight:600;}
+  .sv-nav{display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding:0 4px;}
+  .sv-btn{background:#EDE7F6;border:none;border-radius:12px;padding:10px 20px;font-size:13px;font-weight:700;color:#7B1FA2;cursor:pointer;}
+  .sv-btn:disabled{opacity:0.3;}
+  .sv-dots{display:flex;gap:4px;}
+  .sv-dot{width:8px;height:8px;border-radius:50%;background:#ddd;transition:background 0.2s;}
+  .sv-dot.active{background:#7B1FA2;}
+  .narrate-btn{background:linear-gradient(135deg,#FF6B9D,#FF8E53);border:none;border-radius:14px;padding:10px 20px;color:white;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;margin:0 auto 16px;box-shadow:0 3px 10px rgba(255,107,157,0.4);}
+
+  .progress-header{background:linear-gradient(135deg,#43A047,#66BB6A);padding:16px;text-align:center;}
+  .progress-header h3{color:white;font-size:16px;font-weight:800;}
+  .progress-body{padding:14px;display:flex;flex-direction:column;gap:12px;}
+  .prog-card{background:white;border-radius:16px;padding:14px;box-shadow:0 2px 8px var(--shadow);}
+  .prog-card h4{font-size:12px;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;}
+  .streak-row{display:flex;justify-content:space-between;gap:6px;}
+  .streak-day{flex:1;border-radius:8px;padding:8px 4px;text-align:center;font-size:9px;font-weight:700;color:#888;}
+  .streak-day.done{background:#E8F5E9;color:#2E7D32;}
+  .streak-day.today{background:#FFF9C4;color:#F57F17;}
+  .subject-prog{margin-bottom:10px;}
+  .sp-label{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:#555;margin-bottom:4px;}
+  .sp-bar{height:10px;background:#f0f0f0;border-radius:10px;overflow:hidden;}
+  .sp-fill{height:100%;border-radius:10px;transition:width 1s ease;}
+  .badges-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;text-align:center;}
+  .badge-item{display:flex;flex-direction:column;align-items:center;gap:3px;}
+  .badge-icon{font-size:28px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.15));}
+  .badge-icon.locked{filter:grayscale(100%) opacity(0.3);}
+  .badge-lbl{font-size:8px;font-weight:700;color:#888;}
+  .reward-banner{background:linear-gradient(135deg,#FFD600,#FF8F00);border-radius:16px;padding:14px;display:flex;align-items:center;gap:12px;}
+  .reward-banner .rb-icon{font-size:40px;}
+  .reward-banner h4{color:white;font-size:13px;font-weight:800;}
+  .reward-banner p{color:rgba(255,255,255,0.9);font-size:11px;margin-top:2px;}
+
+  .parent-header{background:linear-gradient(135deg,#1565C0,#1976D2);padding:16px;text-align:center;}
+  .parent-header h3{color:white;font-size:16px;font-weight:800;}
+  .parent-header p{color:rgba(255,255,255,0.85);font-size:11px;margin-top:2px;}
+  .parent-body{padding:14px;display:flex;flex-direction:column;gap:12px;}
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .stat-card{background:white;border-radius:14px;padding:14px;text-align:center;box-shadow:0 2px 8px var(--shadow);}
+  .stat-num{font-size:28px;font-weight:900;}
+  .stat-lbl{font-size:10px;color:#888;font-weight:700;text-transform:uppercase;margin-top:2px;}
+  .insight-card{background:white;border-radius:14px;padding:14px;box-shadow:0 2px 8px var(--shadow);}
+  .insight-card h4{font-size:12px;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;}
+  .insight-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+  .insight-row .ir-icon{font-size:20px;width:28px;}
+  .insight-row .ir-text{font-size:12px;color:#555;font-weight:600;flex:1;}
+  .insight-row .ir-val{font-size:12px;font-weight:800;color:#333;}
+  .goal-progress{background:#f5f5f5;border-radius:10px;height:12px;overflow:hidden;margin-top:6px;}
+  .goal-fill{height:100%;border-radius:10px;background:linear-gradient(90deg,#66BB6A,#43A047);}
+
+  @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  @keyframes pop{0%{transform:scale(0.8);opacity:0}100%{transform:scale(1);opacity:1}}
+  @keyframes wiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-5deg)}75%{transform:rotate(5deg)}}
+  .pop{animation:pop 0.3s ease both;}
+  .wiggle{animation:wiggle 0.4s ease;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="status-bar">
+    <span>9:41 AM</span>
+    <span>KidLearn ✨</span>
+    <span>🔋 100%</span>
+  </div>
+  <div class="top-bar">
+    <div>
+      <div style="color:rgba(255,255,255,0.8);font-size:11px;">Hello, little learner! 👋</div>
+      <h2 id="screenTitle">🏠 Home</h2>
+    </div>
+    <div class="stars-count">⭐ <span id="starCount">24</span> stars</div>
+  </div>
+
+  <!-- HOME -->
+  <div class="screen active" id="screen-home">
+    <div class="home-hero">
+      <div class="hero-mascot">🦉</div>
+      <div class="hero-title">What shall we learn?</div>
+      <div class="hero-sub">Tap something to start!</div>
+    </div>
+    <div class="daily-badge">
+      <div class="db-icon">🔥</div>
+      <div><h4>5-Day Streak! Keep going!</h4><p>Learn something today to keep your streak alive 🌟</p></div>
+    </div>
+    <div class="home-grid">
+      <div class="home-card c1" onclick="goLearn('alpha')"><div class="card-icon">🔤</div><div class="card-title">Alphabet</div><div class="card-sub">A to Z with pictures</div></div>
+      <div class="home-card c2" onclick="goLearn('numbers')"><div class="card-icon">🔢</div><div class="card-title">Numbers</div><div class="card-sub">Count 1 to 20</div></div>
+      <div class="home-card c3" onclick="goLearn('shapes')"><div class="card-icon">🔷</div><div class="card-title">Shapes</div><div class="card-sub">Circle, square & more</div></div>
+      <div class="home-card c4" onclick="goLearn('colors')"><div class="card-icon">🎨</div><div class="card-title">Colours</div><div class="card-sub">Rainbow of colours</div></div>
+      <div class="home-card c5" onclick="showScreen('games')"><div class="card-icon">🎮</div><div class="card-title">Play Games</div><div class="card-sub">Fun quizzes</div></div>
+      <div class="home-card c6" onclick="showScreen('stories')"><div class="card-icon">📖</div><div class="card-title">Stories</div><div class="card-sub">Illustrated tales</div></div>
+    </div>
+  </div>
+
+  <!-- LEARN -->
+  <div class="screen" id="screen-learn">
+    <div class="learn-tabs">
+      <button class="ltab active" onclick="switchLearnTab('alpha',this)">🔤 ABC</button>
+      <button class="ltab" onclick="switchLearnTab('numbers',this)">🔢 123</button>
+      <button class="ltab" onclick="switchLearnTab('shapes',this)">🔷 Shapes</button>
+      <button class="ltab" onclick="switchLearnTab('colors',this)">🎨 Colours</button>
+    </div>
+    <div class="learn-body">
+      <div id="tab-alpha"><div style="text-align:center;margin-bottom:12px;"><div style="font-size:11px;color:#888;font-weight:700;">TAP A LETTER TO HEAR IT! 🔊</div></div><div class="alpha-grid" id="alphaGrid"></div></div>
+      <div id="tab-numbers" style="display:none"><div style="text-align:center;margin-bottom:12px;font-size:11px;color:#888;font-weight:700;">TAP TO COUNT! 🔊</div><div class="num-grid" id="numGrid"></div></div>
+      <div id="tab-shapes" style="display:none"><div style="text-align:center;margin-bottom:12px;font-size:11px;color:#888;font-weight:700;">TAP A SHAPE TO LEARN IT! 🔊</div><div class="shapes-grid" id="shapesGrid"></div></div>
+      <div id="tab-colors" style="display:none"><div style="text-align:center;margin-bottom:12px;font-size:11px;color:#888;font-weight:700;">TAP A COLOUR TO HEAR IT! 🔊</div><div class="colors-grid" id="colorsGrid"></div></div>
+    </div>
+  </div>
+
+  <!-- GAMES -->
+  <div class="screen" id="screen-games">
+    <div class="games-header"><h3>🎮 Play & Learn!</h3><p>Games that make learning super fun!</p></div>
+    <div id="gameMenu">
+      <div class="game-list">
+        <div class="game-item" onclick="startQuiz('letters')"><div class="gi-icon">🔤</div><div><h4>Letter Match</h4><p>Match the letter to its picture</p></div><div class="gi-badge">⭐ +3</div></div>
+        <div class="game-item" onclick="startQuiz('numbers')"><div class="gi-icon">🔢</div><div><h4>Count It!</h4><p>How many things do you see?</p></div><div class="gi-badge">⭐ +3</div></div>
+        <div class="game-item" onclick="startQuiz('colors')"><div class="gi-icon">🎨</div><div><h4>Colour Quiz</h4><p>What colour is this?</p></div><div class="gi-badge">⭐ +3</div></div>
+        <div class="game-item" onclick="startQuiz('shapes')"><div class="gi-icon">🔷</div><div><h4>Shape Finder</h4><p>Name the shape you see</p></div><div class="gi-badge">⭐ +3</div></div>
+        <div class="game-item" onclick="startQuiz('animals')"><div class="gi-icon">🐾</div><div><h4>Animal Sounds</h4><p>Which animal makes this sound?</p></div><div class="gi-badge">⭐ +5</div></div>
+      </div>
+    </div>
+    <div id="quizArea" style="display:none;padding:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <button onclick="closeQuiz()" style="background:#f5f5f5;border:none;border-radius:10px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;">← Back</button>
+        <div id="quizProgress" style="font-size:12px;font-weight:700;color:#888;">Q 1 of 5</div>
+        <div id="quizScore" style="font-size:12px;font-weight:700;color:#E91E63;">⭐ 0</div>
+      </div>
+      <div class="quiz-box">
+        <div class="quiz-emoji" id="quizEmoji">🐶</div>
+        <div class="quiz-question" id="quizQuestion">What letter does this start with?</div>
+        <div class="quiz-options" id="quizOptions"></div>
+        <div class="quiz-feedback" id="quizFeedback"></div>
+      </div>
+      <div id="quizComplete" style="display:none;text-align:center;padding:20px;">
+        <div style="font-size:64px;margin-bottom:12px;">🏆</div>
+        <div style="font-size:20px;font-weight:900;color:#333;margin-bottom:6px;">Amazing job!</div>
+        <div id="finalScore" style="font-size:14px;color:#888;margin-bottom:16px;"></div>
+        <button onclick="closeQuiz()" style="background:linear-gradient(135deg,#FF6B9D,#FF8E53);border:none;border-radius:14px;padding:12px 28px;color:white;font-size:14px;font-weight:800;cursor:pointer;">Play Again 🎮</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STORIES -->
+  <div class="screen" id="screen-stories">
+    <div class="stories-header"><h3>📖 Story Time!</h3></div>
+    <div class="story-list">
+      <div class="story-card" onclick="openStory(0)"><div class="story-thumb" style="background:linear-gradient(135deg,#FFE082,#FFCA28);">🦁</div><div class="story-info"><div class="story-title">Leo the Brave Lion</div><div class="story-sub">A story about courage and friendship</div><div class="story-meta"><span class="story-tag">Animals</span><span class="story-tag">Friendship</span><span class="story-tag">4 pages</span></div></div></div>
+      <div class="story-card" onclick="openStory(1)"><div class="story-thumb" style="background:linear-gradient(135deg,#B2EBF2,#80DEEA);">🐠</div><div class="story-info"><div class="story-title">Finn Finds His Way</div><div class="story-sub">A little fish explores the big ocean</div><div class="story-meta"><span class="story-tag">Ocean</span><span class="story-tag">Adventure</span><span class="story-tag">4 pages</span></div></div></div>
+      <div class="story-card" onclick="openStory(2)"><div class="story-thumb" style="background:linear-gradient(135deg,#DCEDC8,#AED581);">🐛</div><div class="story-info"><div class="story-title">Bella Becomes a Butterfly</div><div class="story-sub">Growing up and changing beautifully</div><div class="story-meta"><span class="story-tag">Nature</span><span class="story-tag">Change</span><span class="story-tag">4 pages</span></div></div></div>
+    </div>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="screen" id="screen-progress">
+    <div class="progress-header"><h3>📊 My Progress</h3></div>
+    <div class="progress-body">
+      <div class="reward-banner"><div class="rb-icon">🏅</div><div><h4>You earned 24 stars this week!</h4><p>5 more stars to unlock the Golden Trophy! 🏆</p></div></div>
+      <div class="prog-card">
+        <h4>🔥 This Week's Streak</h4>
+        <div class="streak-row">
+          <div class="streak-day done">Mon<br>✅</div><div class="streak-day done">Tue<br>✅</div><div class="streak-day done">Wed<br>✅</div><div class="streak-day done">Thu<br>✅</div><div class="streak-day today">Fri<br>⬜</div><div class="streak-day">Sat<br>⬜</div><div class="streak-day">Sun<br>⬜</div>
+        </div>
+      </div>
+      <div class="prog-card">
+        <h4>📚 Subject Progress</h4>
+        <div class="subject-prog"><div class="sp-label"><span>Alphabet</span><span style="color:#5E35B1">18/26 letters</span></div><div class="sp-bar"><div class="sp-fill" style="width:69%;background:linear-gradient(90deg,#9C27B0,#E040FB)"></div></div></div>
+        <div class="subject-prog"><div class="sp-label"><span>Numbers</span><span style="color:#C62828">12/20 numbers</span></div><div class="sp-bar"><div class="sp-fill" style="width:60%;background:linear-gradient(90deg,#E91E63,#F48FB1)"></div></div></div>
+        <div class="subject-prog"><div class="sp-label"><span>Shapes</span><span style="color:#1565C0">6/8 shapes</span></div><div class="sp-bar"><div class="sp-fill" style="width:75%;background:linear-gradient(90deg,#1976D2,#64B5F6)"></div></div></div>
+        <div class="subject-prog"><div class="sp-label"><span>Colours</span><span style="color:#2E7D32">9/12 colours</span></div><div class="sp-bar"><div class="sp-fill" style="width:75%;background:linear-gradient(90deg,#43A047,#A5D6A7)"></div></div></div>
+        <div class="subject-prog"><div class="sp-label"><span>Stories Read</span><span style="color:#E65100">2/3 stories</span></div><div class="sp-bar"><div class="sp-fill" style="width:67%;background:linear-gradient(90deg,#FF6D00,#FFAB40)"></div></div></div>
+      </div>
+      <div class="prog-card">
+        <h4>🏅 My Badges</h4>
+        <div class="badges-grid">
+          <div class="badge-item"><div class="badge-icon">⭐</div><div class="badge-lbl">First Star</div></div>
+          <div class="badge-item"><div class="badge-icon">📚</div><div class="badge-lbl">Bookworm</div></div>
+          <div class="badge-item"><div class="badge-icon">🔥</div><div class="badge-lbl">On Fire</div></div>
+          <div class="badge-item"><div class="badge-icon locked">🏆</div><div class="badge-lbl">Champion</div></div>
+          <div class="badge-item"><div class="badge-icon locked">💎</div><div class="badge-lbl">Diamond</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PARENT DASHBOARD -->
+  <div class="screen" id="screen-parent">
+    <div class="parent-header"><h3>👨‍👩‍👧 Parent Dashboard</h3><p>Track your child's learning journey</p></div>
+    <div class="parent-body">
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-num" style="color:#E91E63;">24</div><div class="stat-lbl">Stars Earned</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:#43A047;">5</div><div class="stat-lbl">Day Streak</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:#1976D2;">47</div><div class="stat-lbl">Mins Today</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:#FF6D00;">85%</div><div class="stat-lbl">Quiz Score</div></div>
+      </div>
+      <div class="insight-card">
+        <h4>📈 This Week's Activity</h4>
+        <div class="insight-row"><div class="ir-icon">🔤</div><div class="ir-text">Alphabet</div><div class="ir-val">18/26 ✅</div></div>
+        <div class="insight-row"><div class="ir-icon">🔢</div><div class="ir-text">Numbers</div><div class="ir-val">12/20</div></div>
+        <div class="insight-row"><div class="ir-icon">🎮</div><div class="ir-text">Games played</div><div class="ir-val">12 games</div></div>
+        <div class="insight-row"><div class="ir-icon">📖</div><div class="ir-text">Stories read</div><div class="ir-val">2 stories</div></div>
+      </div>
+      <div class="insight-card">
+        <h4>🎯 Weekly Goal</h4>
+        <div style="font-size:12px;color:#555;margin-bottom:6px;">Complete 30 minutes of learning per day</div>
+        <div class="goal-progress"><div class="goal-fill" style="width:78%"></div></div>
+        <div style="font-size:11px;color:#888;margin-top:4px;text-align:right;">78% complete</div>
+      </div>
+      <div class="insight-card">
+        <h4>♿ Accessibility Settings</h4>
+        <div class="insight-row"><div class="ir-icon">🔊</div><div class="ir-text">Voice narration</div><div class="ir-val" style="color:#43A047;">ON</div></div>
+        <div class="insight-row"><div class="ir-icon">🔠</div><div class="ir-text">Large text mode</div><div class="ir-val" style="color:#43A047;">ON</div></div>
+        <div class="insight-row"><div class="ir-icon">🐢</div><div class="ir-text">Slow speech</div><div class="ir-val" style="color:#999;">OFF</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STORY VIEWER OVERLAY -->
+  <div class="story-viewer" id="storyViewer">
+    <div class="sv-header">
+      <button class="sv-back" onclick="closeStory()">← Back</button>
+      <div class="sv-title" id="svTitle">Story</div>
+    </div>
+    <div class="sv-body">
+      <button class="narrate-btn" onclick="narratePage()">🔊 Read to me!</button>
+      <div class="sv-page" id="svPage">
+        <div class="pg-emoji" id="svEmoji">🦁</div>
+        <div class="pg-text" id="svText">Once upon a time...</div>
+      </div>
+      <div class="sv-nav">
+        <button class="sv-btn" id="svPrev" onclick="storyNav(-1)">← Prev</button>
+        <div class="sv-dots" id="svDots"></div>
+        <button class="sv-btn" id="svNext" onclick="storyNav(1)">Next →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <button class="nav-btn active" onclick="showScreen('home')" id="nav-home"><div class="nav-icon">🏠</div><div class="nav-label">Home</div></button>
+    <button class="nav-btn" onclick="showScreen('learn')" id="nav-learn"><div class="nav-icon">📚</div><div class="nav-label">Learn</div></button>
+    <button class="nav-btn" onclick="showScreen('games')" id="nav-games"><div class="nav-icon">🎮</div><div class="nav-label">Games</div></button>
+    <button class="nav-btn" onclick="showScreen('stories')" id="nav-stories"><div class="nav-icon">📖</div><div class="nav-label">Stories</div></button>
+    <button class="nav-btn" onclick="showScreen('progress')" id="nav-progress"><div class="nav-icon">⭐</div><div class="nav-label">Progress</div></button>
+    <button class="nav-btn" onclick="showScreen('parent')" id="nav-parent"><div class="nav-icon">👨‍👩‍👧</div><div class="nav-label">Parents</div></button>
+  </div>
+</div>
+
+<script>
+const ALPHA=[{l:'A',e:'🍎',w:'Apple'},{l:'B',e:'🦋',w:'Butterfly'},{l:'C',e:'🐱',w:'Cat'},{l:'D',e:'🐶',w:'Dog'},{l:'E',e:'🐘',w:'Elephant'},{l:'F',e:'🐸',w:'Frog'},{l:'G',e:'🦒',w:'Giraffe'},{l:'H',e:'🏠',w:'House'},{l:'I',e:'🍦',w:'Ice cream'},{l:'J',e:'🍓',w:'Jam'},{l:'K',e:'🪁',w:'Kite'},{l:'L',e:'🦁',w:'Lion'},{l:'M',e:'🐒',w:'Monkey'},{l:'N',e:'🌙',w:'Night'},{l:'O',e:'🐙',w:'Octopus'},{l:'P',e:'🐧',w:'Penguin'},{l:'Q',e:'👸',w:'Queen'},{l:'R',e:'🌈',w:'Rainbow'},{l:'S',e:'🌟',w:'Star'},{l:'T',e:'🐯',w:'Tiger'},{l:'U',e:'☂️',w:'Umbrella'},{l:'V',e:'🎻',w:'Violin'},{l:'W',e:'🐋',w:'Whale'},{l:'X',e:'🪕',w:'Xylophone'},{l:'Y',e:'🧶',w:'Yarn'},{l:'Z',e:'🦓',w:'Zebra'}];
+const NUMS=[{n:1,d:'●',w:'One'},{n:2,d:'●●',w:'Two'},{n:3,d:'●●●',w:'Three'},{n:4,d:'●●\n●●',w:'Four'},{n:5,d:'●●●\n●●',w:'Five'},{n:6,d:'●●●\n●●●',w:'Six'},{n:7,d:'●●●●\n●●●',w:'Seven'},{n:8,d:'●●●●\n●●●●',w:'Eight'},{n:9,d:'●●●\n●●●\n●●●',w:'Nine'},{n:10,d:'●●●●●\n●●●●●',w:'Ten'},{n:11,d:'11',w:'Eleven'},{n:12,d:'12',w:'Twelve'}];
+const SHAPES=[{name:'Circle',svg:'<circle cx="26" cy="26" r="22" fill="#E91E63" opacity="0.85"/>'},{name:'Square',svg:'<rect x="5" y="5" width="42" height="42" rx="4" fill="#1976D2" opacity="0.85"/>'},{name:'Triangle',svg:'<polygon points="26,4 50,48 2,48" fill="#FF9800" opacity="0.85"/>'},{name:'Rectangle',svg:'<rect x="2" y="14" width="48" height="24" rx="4" fill="#43A047" opacity="0.85"/>'},{name:'Star',svg:'<polygon points="26,3 32,20 50,20 36,31 41,48 26,38 11,48 16,31 2,20 20,20" fill="#FFD600" opacity="0.9"/>'},{name:'Heart',svg:'<path d="M26 44 C26 44 4 28 4 15 C4 8 10 4 16 4 C20 4 24 7 26 10 C28 7 32 4 36 4 C42 4 48 8 48 15 C48 28 26 44 26 44Z" fill="#E91E63" opacity="0.85"/>'},{name:'Diamond',svg:'<polygon points="26,2 50,26 26,50 2,26" fill="#9C27B0" opacity="0.85"/>'},{name:'Oval',svg:'<ellipse cx="26" cy="26" rx="24" ry="16" fill="#00897B" opacity="0.85"/>'}];
+const COLORS=[{name:'Red',bg:'#E53935'},{name:'Blue',bg:'#1E88E5'},{name:'Yellow',bg:'#FDD835'},{name:'Green',bg:'#43A047'},{name:'Orange',bg:'#FB8C00'},{name:'Purple',bg:'#8E24AA'},{name:'Pink',bg:'#E91E63'},{name:'Brown',bg:'#6D4C41'},{name:'Black',bg:'#212121'},{name:'White',bg:'#BDBDBD'},{name:'Grey',bg:'#78909C'},{name:'Cyan',bg:'#00ACC1'}];
+const STORIES=[{title:'Leo the Brave Lion',pages:[{e:'🦁',t:'Leo was a little lion who was afraid of the dark. Every night, he hid under his blanket.'},{e:'🌙',t:'One night, Leo heard a small sound. He peeked out from his blanket bravely.'},{e:'🌟',t:'It was just a tiny firefly! The firefly glowed and lit up the whole cave.'},{e:'🤝',t:'Leo and the firefly became best friends. Leo was never afraid of the dark again! The End.'}]},{title:'Finn Finds His Way',pages:[{e:'🐠',t:'Finn was a tiny fish who swam too far from home. The ocean was so big!'},{e:'🐙',t:'A friendly octopus saw Finn looking sad. "Where do you want to go?" asked the octopus.'},{e:'🐢',t:'A wise turtle said "Follow the warm current and you will find your way home!"'},{e:'🏠',t:"Finn followed the turtle's advice and swam right back to his family. He was so happy! The End."}]},{title:'Bella Becomes a Butterfly',pages:[{e:'🐛',t:'Bella was a small caterpillar who crawled along a leaf. She wanted to fly like the birds.'},{e:'🌿',t:'Bella wrapped herself in a cosy cocoon and went to sleep for a long, long time.'},{e:'🌈',t:'When she woke up, she had beautiful wings of every colour! She could fly!'},{e:'🦋',t:'Bella fluttered through the garden, free and beautiful. Change can be a wonderful thing! The End.'}]}];
+const QUIZZES={letters:[{emoji:'🍎',q:'What letter does Apple start with?',ans:'A',opts:['A','B','C','D']},{emoji:'🐶',q:'What letter does Dog start with?',ans:'D',opts:['B','C','D','E']},{emoji:'🌈',q:'What letter does Rainbow start with?',ans:'R',opts:['P','Q','R','S']},{emoji:'🦁',q:'What letter does Lion start with?',ans:'L',opts:['K','L','M','N']},{emoji:'🐘',q:'What letter does Elephant start with?',ans:'E',opts:['D','E','F','G']}],numbers:[{emoji:'🍎🍎🍎',q:'How many apples are there?',ans:'3',opts:['2','3','4','5']},{emoji:'⭐⭐⭐⭐⭐',q:'How many stars are there?',ans:'5',opts:['4','5','6','7']},{emoji:'🐟🐟',q:'How many fish are there?',ans:'2',opts:['1','2','3','4']},{emoji:'🌸🌸🌸🌸',q:'How many flowers are there?',ans:'4',opts:['3','4','5','6']},{emoji:'🎈🎈🎈🎈🎈🎈',q:'How many balloons?',ans:'6',opts:['5','6','7','8']}],colors:[{emoji:'🍅',q:'What colour is a tomato?',ans:'Red',opts:['Red','Blue','Green','Yellow']},{emoji:'🍋',q:'What colour is a lemon?',ans:'Yellow',opts:['Orange','Yellow','Green','White']},{emoji:'🌿',q:'What colour is grass?',ans:'Green',opts:['Blue','Green','Purple','Brown']},{emoji:'🫐',q:'What colour is a blueberry?',ans:'Blue',opts:['Red','Blue','Yellow','Pink']},{emoji:'🧡',q:'What colour is an orange?',ans:'Orange',opts:['Red','Yellow','Orange','Pink']}],shapes:[{emoji:'🔵',q:'What shape is this?',ans:'Circle',opts:['Circle','Square','Triangle','Rectangle']},{emoji:'🔺',q:'What shape has 3 sides?',ans:'Triangle',opts:['Square','Triangle','Circle','Star']},{emoji:'⭐',q:'What shape is a star?',ans:'Star',opts:['Circle','Star','Diamond','Heart']},{emoji:'🔷',q:'What shape is this blue figure?',ans:'Diamond',opts:['Square','Rectangle','Diamond','Oval']},{emoji:'❤️',q:'What shape is this?',ans:'Heart',opts:['Star','Heart','Circle','Oval']}],animals:[{emoji:'🐮',q:'What animal says MOO?',ans:'Cow',opts:['Dog','Cat','Cow','Horse']},{emoji:'🐸',q:'What animal says RIBBIT?',ans:'Frog',opts:['Frog','Duck','Fish','Bird']},{emoji:'🦁',q:'What animal ROARS?',ans:'Lion',opts:['Rabbit','Lion','Pig','Sheep']},{emoji:'🐥',q:'What animal says TWEET?',ans:'Bird',opts:['Dog','Cat','Bird','Cow']},{emoji:'🐕',q:'What animal says WOOF?',ans:'Dog',opts:['Dog','Cat','Cow','Frog']}]};
+
+let stars=24,learnedAlpha=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17],currentStory=0,storyPage=0,quizType='',quizIdx=0,quizScore=0,answeredQ=false;
+const screenTitles={home:'🏠 Home',learn:'📚 Learn',games:'🎮 Play Games',stories:'📖 Story Time',progress:'⭐ My Progress',parent:'👨‍👩‍👧 Parent Dashboard'};
+
+function speak(text,rate){if(!window.speechSynthesis)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.rate=rate||0.85;u.pitch=1.2;speechSynthesis.speak(u);}
+function addStars(n){stars+=n;document.getElementById('starCount').textContent=stars;}
+
+function buildAlpha(){const g=document.getElementById('alphaGrid');g.innerHTML='';ALPHA.forEach((a,i)=>{const d=document.createElement('div');d.className='alpha-card'+(learnedAlpha.includes(i)?' learned':'');d.innerHTML=`<div class="alpha-letter">${a.l}</div><div class="alpha-emoji">${a.e}</div><div class="alpha-word">${a.w}</div>`;d.onclick=()=>{speak(`${a.l}! ${a.l} is for ${a.w}!`);if(!learnedAlpha.includes(i)){learnedAlpha.push(i);d.classList.add('learned');addStars(1);}d.classList.add('wiggle');setTimeout(()=>d.classList.remove('wiggle'),400);};g.appendChild(d);});}
+function buildNumbers(){const g=document.getElementById('numGrid');g.innerHTML='';NUMS.forEach(n=>{const d=document.createElement('div');d.className='num-card';d.innerHTML=`<div class="num-big">${n.n}</div><div class="num-dots">${n.d.replace(/\n/g,'<br>')}</div><div class="num-word">${n.w}</div>`;d.onclick=()=>{speak(`${n.n}! ${n.w}!`);d.classList.add('pop');setTimeout(()=>d.classList.remove('pop'),300);};g.appendChild(d);});}
+function buildShapes(){const g=document.getElementById('shapesGrid');g.innerHTML='';SHAPES.forEach(s=>{const d=document.createElement('div');d.className='shape-card';d.innerHTML=`<div class="shape-svg"><svg viewBox="0 0 52 52" xmlns="http://www.w3.org/2000/svg">${s.svg}</svg></div><div class="shape-name">${s.name}</div>`;d.onclick=()=>{speak(`This is a ${s.name}!`);d.classList.add('wiggle');setTimeout(()=>d.classList.remove('wiggle'),400);};g.appendChild(d);});}
+function buildColors(){const g=document.getElementById('colorsGrid');g.innerHTML='';COLORS.forEach(c=>{const d=document.createElement('div');d.className='color-card';d.style.background=c.bg;d.innerHTML=`<div style="font-size:26px;margin-bottom:4px;">🎨</div><div class="color-name">${c.name}</div>`;d.onclick=()=>{speak(`This colour is ${c.name}!`);d.classList.add('pop');setTimeout(()=>d.classList.remove('pop'),300);};g.appendChild(d);});}
+
+function showScreen(s){document.querySelectorAll('.screen').forEach(el=>el.classList.remove('active'));document.getElementById('screen-'+s).classList.add('active');document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('active'));document.getElementById('nav-'+s).classList.add('active');document.getElementById('screenTitle').textContent=screenTitles[s]||'KidLearn';if(s==='learn'){buildAlpha();buildNumbers();buildShapes();buildColors();}speak(screenTitles[s]||'');}
+function goLearn(tab){showScreen('learn');setTimeout(()=>switchLearnTab(tab,null),100);}
+function switchLearnTab(tab,btn){document.querySelectorAll('.ltab').forEach((b,i)=>{b.classList.toggle('active',['alpha','numbers','shapes','colors'][i]===tab);});['alpha','numbers','shapes','colors'].forEach(t=>{const el=document.getElementById('tab-'+t);if(el)el.style.display=t===tab?'block':'none';});}
+
+function startQuiz(type){quizType=type;quizIdx=0;quizScore=0;answeredQ=false;document.getElementById('gameMenu').style.display='none';document.getElementById('quizArea').style.display='block';document.getElementById('quizComplete').style.display='none';loadQuestion();}
+function loadQuestion(){const qs=QUIZZES[quizType];if(quizIdx>=qs.length){endQuiz();return;}answeredQ=false;const q=qs[quizIdx];document.getElementById('quizProgress').textContent=`Q ${quizIdx+1} of ${qs.length}`;document.getElementById('quizScore').textContent=`⭐ ${quizScore}`;document.getElementById('quizEmoji').textContent=q.emoji;document.getElementById('quizQuestion').textContent=q.q;document.getElementById('quizFeedback').textContent='';const opts=document.getElementById('quizOptions');opts.innerHTML='';[...q.opts].sort(()=>Math.random()-0.5).forEach(o=>{const b=document.createElement('button');b.className='quiz-opt';b.textContent=o;b.onclick=()=>answerQ(o,q.ans,b);opts.appendChild(b);});speak(q.q);}
+function answerQ(chosen,correct,btn){if(answeredQ)return;answeredQ=true;const fb=document.getElementById('quizFeedback');if(chosen===correct){btn.classList.add('correct');fb.textContent='✅ Correct! Well done!';fb.style.color='#2E7D32';quizScore+=3;addStars(3);speak('Correct! Well done! You are so clever!');}else{btn.classList.add('wrong');document.querySelectorAll('.quiz-opt').forEach(b=>{if(b.textContent===correct)b.classList.add('correct');});fb.textContent=`The answer is ${correct}!`;fb.style.color='#C62828';speak(`Not quite! The answer is ${correct}. Keep trying!`);}setTimeout(()=>{quizIdx++;loadQuestion();},1800);}
+function endQuiz(){document.getElementById('quizOptions').innerHTML='';document.getElementById('quizEmoji').textContent='🏆';document.getElementById('quizQuestion').textContent='';document.getElementById('quizComplete').style.display='block';document.getElementById('finalScore').textContent=`You scored ${quizScore} stars! Amazing!`;speak(`Fantastic! You finished the quiz and earned ${quizScore} stars! You are a superstar!`);}
+function closeQuiz(){document.getElementById('gameMenu').style.display='block';document.getElementById('quizArea').style.display='none';}
+
+function openStory(i){currentStory=i;storyPage=0;const s=STORIES[i];document.getElementById('svTitle').textContent=s.title;renderStoryPage();document.getElementById('storyViewer').classList.add('open');const dots=document.getElementById('svDots');dots.innerHTML=s.pages.map((_,j)=>`<div class="sv-dot${j===0?' active':''}"></div>`).join('');}
+function closeStory(){document.getElementById('storyViewer').classList.remove('open');addStars(2);}
+function renderStoryPage(){const s=STORIES[currentStory];const p=s.pages[storyPage];document.getElementById('svEmoji').textContent=p.e;document.getElementById('svText').textContent=p.t;document.getElementById('svPrev').disabled=storyPage===0;document.getElementById('svNext').disabled=storyPage===s.pages.length-1;document.querySelectorAll('.sv-dot').forEach((d,i)=>d.classList.toggle('active',i===storyPage));speak(p.t,0.75);}
+function storyNav(dir){const s=STORIES[currentStory];storyPage=Math.max(0,Math.min(s.pages.length-1,storyPage+dir));renderStoryPage();}
+function narratePage(){speak(STORIES[currentStory].pages[storyPage].t,0.7);}
+
+buildAlpha();buildNumbers();buildShapes();buildColors();
+speak('Welcome to KidLearn! Tap something to start learning!',0.85);
+</script>
+</body>
+</html>
